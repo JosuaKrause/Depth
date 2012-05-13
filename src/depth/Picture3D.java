@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 
 import javax.swing.JComponent;
 
-public class Picture3D extends Picture {
+public class Picture3D extends Picture implements Producer3D {
 
   public static enum RenderMode {
 
@@ -43,11 +43,14 @@ public class Picture3D extends Picture {
   private final Raster imgRaster;
   private final Raster depthRaster;
 
+  private final Producer3D prod;
+
   public Picture3D(final BufferedImage img, final BufferedImage depth) {
     super(new BufferedImage(img.getWidth(), img.getHeight(),
         BufferedImage.TYPE_INT_RGB));
     imgRaster = img.getData();
     depthRaster = depth.getData();
+    prod = this;
   }
 
   public Picture3D(final Picture img, final Picture depth) {
@@ -55,6 +58,7 @@ public class Picture3D extends Picture {
         BufferedImage.TYPE_INT_RGB));
     imgRaster = img.getRaster();
     depthRaster = depth.getRaster();
+    prod = this;
   }
 
   public void update(final JComponent c) {
@@ -150,11 +154,11 @@ public class Picture3D extends Picture {
     final int b = renderMode.blur;
     for(int dx = 0; dx <= b; ++dx) {
       final double f = parts(dx, b);
-      drawRed(pixel[0], x - dist - dx, y, f, redDepth, depth);
-      drawCyan(pixel[1], pixel[2], x + dist - dx, y, f, cyanDepth, depth);
+      drawRed(pixel, x - dist - dx, y, f, redDepth, depth);
+      drawCyan(pixel, x + dist - dx, y, f, cyanDepth, depth);
       if(dx != 0) {
-        drawRed(pixel[0], x - dist + dx, y, f, redDepth, depth);
-        drawCyan(pixel[1], pixel[2], x + dist + dx, y, f, cyanDepth, depth);
+        drawRed(pixel, x - dist + dx, y, f, redDepth, depth);
+        drawCyan(pixel, x + dist + dx, y, f, cyanDepth, depth);
       }
     }
   }
@@ -163,35 +167,45 @@ public class Picture3D extends Picture {
     return max > 0 ? 1.0 - d / max : 1.0;
   }
 
-  private void drawRed(final double red, final int x, final int y,
+  private void drawRed(final double[] pixel, final int x, final int y,
       final double f, final double[] redDepth, final double depth) {
-    final double[] pixel = getPixel(x, y);
     if(!inRangeX(x)) {
       return;
     }
     if(renderMode.depthMem && -depth > redDepth[x]) {
       return;
     }
-    pixel[0] = clampColor(combine(pixel[0], red, f));
-    setPixel(x, y, pixel);
+    prod.leftEye(x, y, pixel, f);
     redDepth[x] = -depth;
   }
 
-  private void
-      drawCyan(final double green, final double blue, final int x,
-          final int y, final double f, final double[] cyanDepth,
-          final double depth) {
-    final double[] pixel = getPixel(x, y);
+  @Override
+  public void leftEye(final int x, final int y, final double[] pixel,
+      final double f) {
+    final double[] old = getPixel(x, y);
+    old[0] = clampColor(combine(old[0], pixel[0], f));
+    setPixel(x, y, old);
+  }
+
+  private void drawCyan(final double[] pixel, final int x, final int y,
+      final double f, final double[] cyanDepth, final double depth) {
     if(!inRangeX(x)) {
       return;
     }
     if(renderMode.depthMem && -depth > cyanDepth[x]) {
       return;
     }
-    pixel[1] = clampColor(combine(pixel[1], green, f));
-    pixel[2] = clampColor(combine(pixel[2], blue, f));
-    setPixel(x, y, pixel);
+    prod.rightEye(x, y, pixel, f);
     cyanDepth[x] = -depth;
+  }
+
+  @Override
+  public void rightEye(final int x, final int y, final double[] pixel,
+      final double f) {
+    final double[] old = getPixel(x, y);
+    old[1] = clampColor(combine(old[1], pixel[1], f));
+    old[2] = clampColor(combine(old[2], pixel[2], f));
+    setPixel(x, y, old);
   }
 
   private static double combine(final double orig, final double next,
