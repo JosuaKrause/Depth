@@ -30,8 +30,10 @@ public class Picture3D extends Picture {
     }
   }
 
+  private static final double FACTOR = MAX_COLOR / Math.log(MAX_COLOR);
+
   private double depth(final int x, final int y) {
-    return depthRaster.getPixel(x, y, new double[4])[0];
+    return Math.log(depthRaster.getPixel(x, y, new double[4])[0] + 1) * FACTOR;
   }
 
   private double[] origPixel(final int x, final int y) {
