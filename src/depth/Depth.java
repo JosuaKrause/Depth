@@ -104,6 +104,8 @@ public class Depth extends JFrame implements Painter {
 
   }
 
+  private RenderMode renderMode;
+
   public Depth() {
     comp = new Canvas(this, 800, 600) {
 
@@ -120,7 +122,7 @@ public class Depth extends JFrame implements Painter {
 
           @Override
           public void actionPerformed(final ActionEvent e) {
-            final RenderMode m = pic.getRenderMode();
+            final RenderMode m = getRenderMode();
             final RenderMode[] values = RenderMode.values();
             RenderMode next = values[0];
             int i = values.length;
@@ -130,8 +132,7 @@ public class Depth extends JFrame implements Painter {
               }
               next = values[i];
             }
-            pic.setRenderMode(next, comp);
-            repaint();
+            setRenderMode(next);
           }
 
         });
@@ -256,8 +257,22 @@ public class Depth extends JFrame implements Painter {
     setLayout(new BorderLayout());
     add(comp);
     pack();
+    setRenderMode(RenderMode.SORTED_BLUR_LOG);
     setLocationRelativeTo(null);
     setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+  }
+
+  public void setRenderMode(final RenderMode renderMode) {
+    this.renderMode = renderMode;
+    setTitle(renderMode.toString());
+    if(pic != null) {
+      pic.setRenderMode(renderMode, comp);
+    }
+    repaint();
+  }
+
+  public RenderMode getRenderMode() {
+    return renderMode;
   }
 
   @Override
@@ -302,7 +317,7 @@ public class Depth extends JFrame implements Painter {
     pic = null;
     comp.reset(new Rectangle2D.Double(0, 0, img.getWidth(), img.getHeight()));
     pic = p;
-    pic.update(comp);
+    pic.setRenderMode(renderMode, comp);
   }
 
   public void nextPicture() throws IOException {
