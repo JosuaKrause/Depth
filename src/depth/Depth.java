@@ -2,8 +2,6 @@ package depth;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -11,22 +9,18 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ActionMap;
-import javax.swing.InputMap;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.KeyStroke;
 
 import depth.Picture3D.RenderMode;
 
-public class Depth extends JFrame {
+public class Depth extends JFrame implements Painter {
 
   private static final long serialVersionUID = 2045195245929930615L;
 
@@ -44,7 +38,9 @@ public class Depth extends JFrame {
 
   protected Picture img;
 
-  private final JComponent comp;
+  protected boolean drawMode = false;
+
+  private final Canvas comp;
 
   private class PicAction extends AbstractAction {
 
@@ -72,13 +68,12 @@ public class Depth extends JFrame {
     pic.update();
     depth = new Picture(d);
     img = new Picture(i);
-    comp = new JComponent() {
+    comp = new Canvas(this, img.getWidth(), img.getHeight()) {
 
       private static final long serialVersionUID = 2863632496156500738L;
 
-      {
-        setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
-        setFocusable(true);
+      @Override
+      public void setupKeyActions() {
         addAction(KeyEvent.VK_1, new PicAction(1));
         addAction(KeyEvent.VK_2, new PicAction(2));
         addAction(KeyEvent.VK_3, new PicAction(3));
@@ -113,26 +108,29 @@ public class Depth extends JFrame {
           }
 
         });
-      }
+        addAction(KeyEvent.VK_M, new AbstractAction() {
 
-      private void addAction(final int key, final Action a) {
-        final Object token = new Object();
-        final InputMap input = getInputMap();
-        input.put(KeyStroke.getKeyStroke(key, 0), token);
-        final ActionMap action = getActionMap();
-        action.put(token, a);
-      }
+          private static final long serialVersionUID = 4130158851209389262L;
 
-      @Override
-      public void paint(final Graphics g) {
-        final Graphics2D g2 = (Graphics2D) g.create();
-        Depth.this.paint(g2);
-        g2.dispose();
-        final Graphics2D g3 = (Graphics2D) g.create();
-        g3.setColor(Color.BLACK);
-        g3.draw(new Ellipse2D.Double(xPos - radius, yPos - radius, radius * 2,
-            radius * 2));
-        g3.dispose();
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            drawMode = isMoveable();
+            setMoveable(!drawMode);
+            repaint();
+          }
+
+        });
+        addAction(KeyEvent.VK_V, new AbstractAction() {
+
+          private static final long serialVersionUID = -7512759810216951365L;
+
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            reset(new Rectangle2D.Double(0, 0, pic.getWidth(), pic.getHeight()));
+          }
+
+        });
+        setMargin(0);
       }
 
     };
@@ -140,20 +138,26 @@ public class Depth extends JFrame {
 
       @Override
       public void mouseMoved(final MouseEvent e) {
-        xPos = e.getX();
-        yPos = e.getY();
-        comp.repaint();
+        if(drawMode) {
+          xPos = e.getX();
+          yPos = e.getY();
+          comp.repaint();
+        }
       }
 
       @Override
       public void mousePressed(final MouseEvent e) {
-        edit(e);
-        comp.grabFocus();
+        if(drawMode) {
+          edit(e);
+          comp.grabFocus();
+        }
       }
 
       @Override
       public void mouseDragged(final MouseEvent e) {
-        edit(e);
+        if(drawMode) {
+          edit(e);
+        }
       }
 
       private void edit(final MouseEvent e) {
@@ -166,15 +170,17 @@ public class Depth extends JFrame {
 
       @Override
       public void mouseWheelMoved(final MouseWheelEvent e) {
-        final int rot = e.getWheelRotation();
-        radius += rot * 5;
-        if(radius > 100) {
-          radius = 100;
+        if(drawMode) {
+          final int rot = e.getWheelRotation();
+          radius += rot * 5;
+          if(radius > 100) {
+            radius = 100;
+          }
+          if(radius < 1) {
+            radius = 1;
+          }
+          comp.repaint();
         }
-        if(radius < 1) {
-          radius = 1;
-        }
-        comp.repaint();
       }
 
     };
@@ -197,7 +203,8 @@ public class Depth extends JFrame {
     d.setVisible(true);
   }
 
-  protected void paint(final Graphics2D g) {
+  @Override
+  public void draw(final Graphics2D g) {
     switch(mode) {
       case 1:
         pic.draw(g);
@@ -209,6 +216,16 @@ public class Depth extends JFrame {
         depth.draw(g);
         break;
     }
+  }
+
+  @Override
+  public void drawStatic(final Graphics2D g) {
+    if(!drawMode) {
+      return;
+    }
+    g.setColor(Color.BLACK);
+    g.draw(new Ellipse2D.Double(xPos - radius, yPos - radius, radius * 2,
+        radius * 2));
   }
 
 }
