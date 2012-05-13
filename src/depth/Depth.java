@@ -26,7 +26,6 @@ public class Depth extends JFrame implements Painter {
   public static final void main(final String[] args) throws IOException {
     final String folder = "examples";
     final Depth d = new Depth();
-    d.setVisible(true);
     d.setPicture(listImages(folder)[0]);
   }
 
@@ -308,6 +307,9 @@ public class Depth extends JFrame implements Painter {
 
   public void setPicture(final File file)
       throws IOException {
+    if(!isVisible()) {
+      setVisible(true);
+    }
     this.file = file;
     final BufferedImage i = ImageIO.read(file);
     final BufferedImage d = ImageIO.read(getDepth(file));
