@@ -17,11 +17,14 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.KeyStroke;
+
+import depth.Picture3D.RenderMode;
 
 public class Depth extends JFrame {
 
@@ -76,14 +79,48 @@ public class Depth extends JFrame {
       {
         setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
         setFocusable(true);
+        addAction(KeyEvent.VK_1, new PicAction(1));
+        addAction(KeyEvent.VK_2, new PicAction(2));
+        addAction(KeyEvent.VK_3, new PicAction(3));
+        addAction(KeyEvent.VK_R, new AbstractAction() {
+
+          private static final long serialVersionUID = -8571874798155653538L;
+
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            final RenderMode m = pic.getRenderMode();
+            final RenderMode[] values = RenderMode.values();
+            RenderMode next = values[0];
+            int i = values.length;
+            while(--i >= 0) {
+              if(values[i] == m) {
+                break;
+              }
+              next = values[i];
+            }
+            pic.setRenderMode(next);
+            repaint();
+          }
+
+        });
+        addAction(KeyEvent.VK_Q, new AbstractAction() {
+
+          private static final long serialVersionUID = 3405492483455727601L;
+
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            Depth.this.dispose();
+          }
+
+        });
+      }
+
+      private void addAction(final int key, final Action a) {
+        final Object token = new Object();
         final InputMap input = getInputMap();
-        input.put(KeyStroke.getKeyStroke(KeyEvent.VK_1, 0), "1");
-        input.put(KeyStroke.getKeyStroke(KeyEvent.VK_2, 0), "2");
-        input.put(KeyStroke.getKeyStroke(KeyEvent.VK_3, 0), "3");
+        input.put(KeyStroke.getKeyStroke(key, 0), token);
         final ActionMap action = getActionMap();
-        action.put("1", new PicAction(1));
-        action.put("2", new PicAction(2));
-        action.put("3", new PicAction(3));
+        action.put(token, a);
       }
 
       @Override
