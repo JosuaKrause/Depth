@@ -55,7 +55,7 @@ public class Depth extends JFrame implements Painter {
     @Override
     public void actionPerformed(final ActionEvent e) {
       if(setMode == 1) {
-        pic.update();
+        pic.update(comp);
       }
       mode = setMode;
       comp.repaint();
@@ -65,7 +65,6 @@ public class Depth extends JFrame implements Painter {
 
   public Depth(final BufferedImage i, final BufferedImage d) {
     pic = new Picture3D(i, d);
-    pic.update();
     depth = new Picture(d);
     img = new Picture(i);
     comp = new Canvas(this, img.getWidth(), img.getHeight()) {
@@ -93,7 +92,7 @@ public class Depth extends JFrame implements Painter {
               }
               next = values[i];
             }
-            pic.setRenderMode(next);
+            pic.setRenderMode(next, comp);
             repaint();
           }
 
@@ -201,6 +200,7 @@ public class Depth extends JFrame implements Painter {
     final BufferedImage depth = ImageIO.read(new File(name + "_depth" + ext));
     final Depth d = new Depth(img, depth);
     d.setVisible(true);
+    d.pic.update(d.comp);
   }
 
   @Override

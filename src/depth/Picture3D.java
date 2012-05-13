@@ -4,6 +4,10 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.swing.JComponent;
 
 public class Picture3D extends Picture {
 
@@ -46,17 +50,28 @@ public class Picture3D extends Picture {
     depthRaster = img.getData();
   }
 
-  public void update() {
-    updateLines(0, height - 1);
+  public void update(final JComponent c) {
+    updateLines(0, height - 1, c);
   }
 
-  public void updateLines(final int lower, final int upper) {
+  public void updateLines(final int lower, final int upper, final JComponent c) {
+    final ExecutorService pool = Executors.newCachedThreadPool();
     for(int y = lower; y <= upper; ++y) {
       if(!inRangeY(y)) {
         continue;
       }
-      updateLine(y);
+      final int curY = y;
+      pool.execute(new Runnable() {
+
+        @Override
+        public void run() {
+          updateLine(curY);
+          c.repaint();
+        }
+
+      });
     }
+    pool.shutdown();
   }
 
   private static final double FACTOR = MAX_COLOR / Math.log(MAX_COLOR);
@@ -108,9 +123,9 @@ public class Picture3D extends Picture {
     return factor * MAX_COLOR;
   }
 
-  public void setRenderMode(final RenderMode renderMode) {
+  public void setRenderMode(final RenderMode renderMode, final JComponent c) {
     this.renderMode = renderMode;
-    update();
+    update(c);
   }
 
   public RenderMode getRenderMode() {
