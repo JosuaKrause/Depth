@@ -2,7 +2,6 @@ package depth;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -257,6 +256,7 @@ public class Depth extends JFrame implements Painter {
     setLayout(new BorderLayout());
     add(comp);
     pack();
+    setLocationRelativeTo(null);
     setDefaultCloseOperation(DISPOSE_ON_CLOSE);
   }
 
@@ -300,9 +300,6 @@ public class Depth extends JFrame implements Painter {
     depth = new Picture(d);
     final Picture3D p = new Picture3D(img, depth);
     pic = null;
-    comp.setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
-    pack();
-    setLocationRelativeTo(null);
     comp.reset(new Rectangle2D.Double(0, 0, img.getWidth(), img.getHeight()));
     pic = p;
     pic.update(comp);
