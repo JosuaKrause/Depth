@@ -298,11 +298,13 @@ public class Depth extends JFrame implements Painter {
     final BufferedImage d = ImageIO.read(getDepth(file));
     img = new Picture(i);
     depth = new Picture(d);
-    pic = new Picture3D(img, depth);
+    final Picture3D p = new Picture3D(img, depth);
+    pic = null;
     comp.setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
     pack();
     setLocationRelativeTo(null);
     comp.reset(new Rectangle2D.Double(0, 0, img.getWidth(), img.getHeight()));
+    pic = p;
     pic.update(comp);
   }
 
