@@ -132,7 +132,6 @@ public class Picture3D extends Picture {
 
   public void setRenderMode(final RenderMode renderMode, final JComponent c) {
     this.renderMode = renderMode;
-    System.out.println(renderMode);
     update(c);
   }
 
