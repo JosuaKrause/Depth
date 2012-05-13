@@ -2,6 +2,7 @@ package depth;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 
 public class Picture {
@@ -52,6 +53,10 @@ public class Picture {
       return;
     }
     out.setPixel(x, y, pixel);
+  }
+
+  protected Raster getRaster() {
+    return out;
   }
 
   protected double clampColor(final double color) {

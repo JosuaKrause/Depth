@@ -47,7 +47,14 @@ public class Picture3D extends Picture {
     super(new BufferedImage(img.getWidth(), img.getHeight(),
         BufferedImage.TYPE_INT_RGB));
     imgRaster = img.getData();
-    depthRaster = img.getData();
+    depthRaster = depth.getData();
+  }
+
+  public Picture3D(final Picture img, final Picture depth) {
+    super(new BufferedImage(img.getWidth(), img.getHeight(),
+        BufferedImage.TYPE_INT_RGB));
+    imgRaster = img.getRaster();
+    depthRaster = depth.getRaster();
   }
 
   public void update(final JComponent c) {
@@ -74,7 +81,7 @@ public class Picture3D extends Picture {
     pool.shutdown();
   }
 
-  private static final double FACTOR = MAX_COLOR / Math.log(MAX_COLOR);
+  private static final double FACTOR = MAX_COLOR / Math.log(MAX_COLOR + 1);
 
   private double depth(final int x, final int y) {
     final double depth = depthRaster.getPixel(x, y, new double[4])[0];
@@ -125,6 +132,7 @@ public class Picture3D extends Picture {
 
   public void setRenderMode(final RenderMode renderMode, final JComponent c) {
     this.renderMode = renderMode;
+    System.out.println(renderMode);
     update(c);
   }
 

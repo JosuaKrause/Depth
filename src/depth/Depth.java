@@ -22,6 +22,16 @@ import depth.Picture3D.RenderMode;
 
 public class Depth extends JFrame implements Painter {
 
+  public static void main(final String[] args) throws IOException {
+    final String ext = ".jpg";
+    final String name = "mountain";
+    final BufferedImage img = ImageIO.read(new File(name + ext));
+    final BufferedImage depth = ImageIO.read(new File(name + "_depth" + ext));
+    final Depth d = new Depth(img, depth);
+    d.setVisible(true);
+    d.pic.update(d.comp);
+  }
+
   private static final long serialVersionUID = 2045195245929930615L;
 
   protected int mode = 1;
@@ -64,9 +74,9 @@ public class Depth extends JFrame implements Painter {
   }
 
   public Depth(final BufferedImage i, final BufferedImage d) {
-    pic = new Picture3D(i, d);
     depth = new Picture(d);
     img = new Picture(i);
+    pic = new Picture3D(img, depth);
     comp = new Canvas(this, img.getWidth(), img.getHeight()) {
 
       private static final long serialVersionUID = 2863632496156500738L;
@@ -191,16 +201,6 @@ public class Depth extends JFrame implements Painter {
     pack();
     setLocationRelativeTo(null);
     setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-  }
-
-  public static void main(final String[] args) throws IOException {
-    final String ext = ".jpg";
-    final String name = "mountain";
-    final BufferedImage img = ImageIO.read(new File(name + ext));
-    final BufferedImage depth = ImageIO.read(new File(name + "_depth" + ext));
-    final Depth d = new Depth(img, depth);
-    d.setVisible(true);
-    d.pic.update(d.comp);
   }
 
   @Override
