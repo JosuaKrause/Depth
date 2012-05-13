@@ -2,6 +2,7 @@ package depth;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -12,6 +13,7 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
@@ -22,14 +24,42 @@ import depth.Picture3D.RenderMode;
 
 public class Depth extends JFrame implements Painter {
 
-  public static void main(final String[] args) throws IOException {
-    final String ext = ".jpg";
-    final String name = "mountain";
-    final BufferedImage img = ImageIO.read(new File(name + ext));
-    final BufferedImage depth = ImageIO.read(new File(name + "_depth" + ext));
-    final Depth d = new Depth(img, depth);
+  public static final void main(final String[] args) throws IOException {
+    final String folder = "examples";
+    final Depth d = new Depth();
     d.setVisible(true);
-    d.pic.update(d.comp);
+    d.setPicture(listImages(folder)[0]);
+  }
+
+  public static final String DEPTH = "_depth";
+
+  public static final File getDepth(final File file) {
+    final String name = file.getName();
+    final int i = name.lastIndexOf('.');
+    final String n = name.substring(0, i);
+    final String e = name.substring(i);
+    return new File(file.getParent(), n + DEPTH + e);
+  }
+
+  public static final File[] listImages(final String folder) {
+    final File path = new File(folder);
+    final FileFilter filter = new FileFilter() {
+
+      @Override
+      public boolean accept(final File f) {
+        if(!f.isFile()) {
+          return false;
+        }
+        final String name = f.getName();
+        if(!name.endsWith(".png") && !name.endsWith(".jpg")
+            && !name.endsWith(".jpeg")) {
+          return false;
+        }
+        return getDepth(f).exists();
+      }
+
+    };
+    return path.listFiles(filter);
   }
 
   private static final long serialVersionUID = 2045195245929930615L;
@@ -52,6 +82,8 @@ public class Depth extends JFrame implements Painter {
 
   private final Canvas comp;
 
+  private File file;
+
   private class PicAction extends AbstractAction {
 
     private static final long serialVersionUID = -5195912606444403591L;
@@ -73,11 +105,8 @@ public class Depth extends JFrame implements Painter {
 
   }
 
-  public Depth(final BufferedImage i, final BufferedImage d) {
-    depth = new Picture(d);
-    img = new Picture(i);
-    pic = new Picture3D(img, depth);
-    comp = new Canvas(this, img.getWidth(), img.getHeight()) {
+  public Depth() {
+    comp = new Canvas(this, 800, 600) {
 
       private static final long serialVersionUID = 2863632496156500738L;
 
@@ -139,6 +168,34 @@ public class Depth extends JFrame implements Painter {
           }
 
         });
+        addAction(KeyEvent.VK_LEFT, new AbstractAction() {
+
+          private static final long serialVersionUID = -6718270417186190777L;
+
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            try {
+              prevPicture();
+            } catch(final IOException io) {
+              repaint();
+            }
+          }
+
+        });
+        addAction(KeyEvent.VK_RIGHT, new AbstractAction() {
+
+          private static final long serialVersionUID = -8937019109230258124L;
+
+          @Override
+          public void actionPerformed(final ActionEvent e) {
+            try {
+              nextPicture();
+            } catch(final IOException io) {
+              repaint();
+            }
+          }
+
+        });
         setMargin(0);
       }
 
@@ -196,10 +253,10 @@ public class Depth extends JFrame implements Painter {
     comp.addMouseListener(mouse);
     comp.addMouseMotionListener(mouse);
     comp.addMouseWheelListener(mouse);
+    comp.setBackground(Color.BLACK);
     setLayout(new BorderLayout());
     add(comp);
     pack();
-    setLocationRelativeTo(null);
     setDefaultCloseOperation(DISPOSE_ON_CLOSE);
   }
 
@@ -207,13 +264,19 @@ public class Depth extends JFrame implements Painter {
   public void draw(final Graphics2D g) {
     switch(mode) {
       case 1:
-        pic.draw(g);
+        if(pic != null) {
+          pic.draw(g);
+        }
         break;
       case 2:
-        img.draw(g);
+        if(img != null) {
+          img.draw(g);
+        }
         break;
       case 3:
-        depth.draw(g);
+        if(depth != null) {
+          depth.draw(g);
+        }
         break;
     }
   }
@@ -226,6 +289,46 @@ public class Depth extends JFrame implements Painter {
     g.setColor(Color.BLACK);
     g.draw(new Ellipse2D.Double(xPos - radius, yPos - radius, radius * 2,
         radius * 2));
+  }
+
+  public void setPicture(final File file)
+      throws IOException {
+    this.file = file;
+    final BufferedImage i = ImageIO.read(file);
+    final BufferedImage d = ImageIO.read(getDepth(file));
+    img = new Picture(i);
+    depth = new Picture(d);
+    pic = new Picture3D(img, depth);
+    comp.setPreferredSize(new Dimension(img.getWidth(), img.getHeight()));
+    pack();
+    setLocationRelativeTo(null);
+    comp.reset(new Rectangle2D.Double(0, 0, img.getWidth(), img.getHeight()));
+    pic.update(comp);
+  }
+
+  public void nextPicture() throws IOException {
+    final File[] files = listImages(file.getParent());
+    File cur = files[0];
+    int i = files.length;
+    while(--i >= 0) {
+      if(files[i].equals(file)) {
+        break;
+      }
+      cur = files[i];
+    }
+    setPicture(cur);
+  }
+
+  public void prevPicture() throws IOException {
+    final File[] files = listImages(file.getParent());
+    File cur = files[files.length - 1];
+    for(final File f : files) {
+      if(f.equals(file)) {
+        break;
+      }
+      cur = f;
+    }
+    setPicture(cur);
   }
 
 }
